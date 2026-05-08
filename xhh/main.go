@@ -47,7 +47,7 @@ type Respo struct {
 
 func CheckAt() {
 	ctx := context.Background()
-	loger.Loger.Info("[XHH]检查@")
+	fmt.Println("[XHH]检查@")
 	var offset int
 	nomore := "false"
 	other := fmt.Sprintf("?message_type=16&offset=%v&limit=20&no_more=%s", offset, nomore)
@@ -80,11 +80,11 @@ func AutoReply() {
 	var text string
 	row.Scan(&linkID, &commentID, &rootID, &text)
 	if commentID != 0 {
-		loger.Loger.Info("[XHH]正在回复")
+		loger.Loger.Info(fmt.Sprintf("[XHH]正在回复[%v]%s", commentID, text))
 		Reply("Ask Grok is currently available to Premium and Premium+ subscribers only. Subscribe to unlock this feature: x.com/i/premium_sign…", strconv.Itoa(linkID), strconv.Itoa(commentID), strconv.Itoa(rootID), "")
 		pg.Conn.Exec(ctx, "UPDATE at SET reply=$1 WHERE comment_a_id=$2", true, commentID)
 	} else {
-		loger.Loger.Info("[XHH]无事可做")
+		fmt.Println("[XHH]无事可做")
 	}
 	defer ctx.Done()
 }
