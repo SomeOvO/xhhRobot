@@ -32,7 +32,7 @@ func SendReq(Method, Path string, Body io.Reader, other string) *http.Response {
 	}
 	reqUrl.Set("x_os_type", "Windows")
 	reqUrl.Set("device_info", "Chrome")
-	reqUrl.Set("device_id", "11451c407df0ff22ee49af5b59976395")
+	reqUrl.Set("device_id", "12451c407df0ff22ee49af5b59976395")
 	reqUrl.Set("hkey", hkey)
 	reqUrl.Set("_time", strconv.Itoa(time))
 	reqUrl.Set("nonce", nonce)

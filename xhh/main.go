@@ -1,16 +1,15 @@
 package xhh
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"strconv"
+	"xhhrobot/ai"
+	"xhhrobot/config"
+	"xhhrobot/db"
 	"xhhrobot/loger"
-	"xhhrobot/pg"
-
-	"go.uber.org/zap"
 )
 
 var Info struct {
@@ -46,14 +45,12 @@ type Respo struct {
 }
 
 func CheckAt() {
-	ctx := context.Background()
 	fmt.Println("[XHH]检查@")
 	var offset int
 	nomore := "false"
 	other := fmt.Sprintf("?message_type=16&offset=%v&limit=20&no_more=%s", offset, nomore)
 	resp := SendReq("GET", "/bbs/app/user/message", nil, other)
 	var data Respo
-	defer ctx.Done()
 	Dbyte, err := io.ReadAll(resp.Body)
 	if err != nil {
 		loger.Loger.Error("[XHH]无法读取Body")
@@ -65,26 +62,39 @@ func CheckAt() {
 		return
 	}
 	for _, v := range data.Result.Messages {
-		_, err := pg.Conn.Exec(ctx, "INSERT INTO at (msg_id,comment_a_id,comment_root_id,link_id,user_a_id,comment_text,reply) VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (msg_id) DO NOTHING", v.MsgID, v.CommentID, v.RootCommentID, v.LinkID, v.UserID, v.CommentText, false)
-		if err != nil {
-			loger.Loger.Info("[XHH]PsqlError", zap.Error(err))
-			return
+		if v.UserID == config.ConfigStruct.Xhh.Owner {
+			db.Insert(v.MsgID, v.CommentID, v.RootCommentID, v.LinkID, v.UserID, v.CommentText, false)
 		}
 	}
 }
 
 func AutoReply() {
-	ctx := context.Background()
-	row := pg.Conn.QueryRow(ctx, "SELECT link_id,comment_a_id,comment_root_id,comment_text FROM at WHERE reply=false LIMIT 1")
-	var linkID, commentID, rootID int
-	var text string
-	row.Scan(&linkID, &commentID, &rootID, &text)
+	linkID, commentID, rootID, text, UID := db.GetComm()
+	var isok bool
 	if commentID != 0 {
-		loger.Loger.Info(fmt.Sprintf("[XHH]正在回复[%v]%s", commentID, text))
-		Reply("Ask Grok is currently available to Premium and Premium+ subscribers only. Subscribe to unlock this feature: x.com/i/premium_sign…", strconv.Itoa(linkID), strconv.Itoa(commentID), strconv.Itoa(rootID), "")
-		pg.Conn.Exec(ctx, "UPDATE at SET reply=$1 WHERE comment_a_id=$2", true, commentID)
+		if UID == config.ConfigStruct.Xhh.Owner {
+			Info := GetLinkInfo(linkID)
+			if Info == "" {
+				loger.Loger.Info("[XHH]获取LinkID失败")
+				return
+			}
+			ReplyText := ai.Grok(Info, text)
+			if ReplyText == "" {
+				loger.Loger.Info("[XHH]Ai返回错误")
+				return
+			}
+			isok = Reply(ReplyText, strconv.Itoa(linkID), strconv.Itoa(commentID), strconv.Itoa(rootID), "")
+
+		} else {
+			loger.Loger.Info(fmt.Sprintf("[XHH]正在回复[%v]%s", commentID, text))
+			isok = Reply("Ask Grok is currently available to Premium and Premium+ subscribers only. Subscribe to unlock this feature: x.com/i/premium_sign…", strconv.Itoa(linkID), strconv.Itoa(commentID), strconv.Itoa(rootID), "")
+		}
+		if isok {
+			db.Replyed(commentID)
+		} else {
+			loger.Loger.Error("[XHH]无法回复评论")
+		}
 	} else {
 		fmt.Println("[XHH]无事可做")
 	}
-	defer ctx.Done()
 }

@@ -14,8 +14,8 @@
 {
   "xhh": {
     "baseUrl": "https://api.xiaoheihe.cn",
-    "webver": "999.0.4",
-    "version": "2.5"
+    "webver": "2.5",
+    "version": "999.0.4"
   },
   "database": {
     "db": "数据库名",

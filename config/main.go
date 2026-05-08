@@ -8,17 +8,23 @@ import (
 
 var ConfigStruct struct {
 	Xhh struct {
+		Owner   int    `json:"owner"`
 		BaseUrl string `json:"baseUrl"`
 		WebVer  string `json:"webver"`
 		Ver     string `json:"version"`
 	} `json:"xhh"`
 	DataBase struct {
+		Type   string `json:"type"`
 		Db     string `json:"db"`
 		Host   string `json:"host"`
 		Port   string `json:"port"`
 		User   string `json:"user"`
 		Passwd string `json:"passwd"`
 	} `json:"database"`
+	Ai struct {
+		BaseUrl string `json:"baseUrl"`
+		Token   string `json:"token"`
+	} `json:"ai"`
 }
 
 func InitConfig() {
@@ -42,4 +48,5 @@ func InitConfig() {
 	if err != nil {
 		panic(err)
 	}
+	loger.Loger.Info("[CFG]Init OK")
 }
