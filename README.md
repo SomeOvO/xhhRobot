@@ -74,6 +74,7 @@ deviceID：设备ID,可以为空，由32个字符串组成
 baseUrl：小黑盒的url，目前填写`https://api.xiaoheihe.cn`
 
 以下可以自行前往小黑盒官网启用浏览器控制台获取，此页面可能更新不及时
+
 webver: web版本号，请填写2.5
 version：版本号，请填写999.0.4
 ## database配置项
