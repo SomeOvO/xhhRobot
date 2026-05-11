@@ -12,9 +12,11 @@
 
 # 开始使用
 
+问题解答，有偿部署，技术交流；此项目的QQ群：1105459042
+
 ## 下载
 
-前往Release下载您对应的系统版本
+前往[Release下载](https://github.com/SomeOvO/xhhRobot/releases)您对应的系统版本
 
 ## 配置
 
