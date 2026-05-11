@@ -25,6 +25,7 @@ var ConfigStruct struct {
 		Passwd string `json:"passwd"`
 	} `json:"database"`
 	Ai struct {
+		Model   string `json:"model"`
 		Prompt  string `json:"prompt"`
 		BaseUrl string `json:"baseUrl"`
 		Token   string `json:"token"`
@@ -44,7 +45,7 @@ func InitConfig() {
 				panic(err)
 			}
 			os.WriteFile("./config.json", Data, 0644)
-			loger.Loger.Fatal("Plz edit config and restart")
+			loger.Loger.Fatal("请修改配置文件后重新启动")
 		}
 		panic(err)
 	}

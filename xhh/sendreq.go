@@ -12,7 +12,6 @@ import (
 )
 
 func SendReq(Method, Path string, Body io.Reader, other string) *http.Response {
-	loger.Loger.Info("[XHH]发送请求", zap.String("Method", Method), zap.String("Path", Path))
 	cfg := config.ConfigStruct.Xhh
 	u, err := url.Parse(cfg.BaseUrl + Path + other)
 	if err != nil {

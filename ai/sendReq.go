@@ -38,6 +38,9 @@ type respStruct struct {
 }
 
 func SendReq(Model string, Msg []Messages) (Jresp respStruct) {
+	if Model == "" {
+		loger.Loger.Fatal("[Ai]请确保配置文件中的模型是存在的")
+	}
 	var body BodyStruct
 	body.Model = Model
 	body.Msgs = Msg

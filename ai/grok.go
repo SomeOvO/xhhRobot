@@ -29,7 +29,7 @@ func Grok(Content, UserSend string) string {
 	Msgs[0] = SMsg
 	Msgs[1] = TMsg
 	Msgs[2] = UMsg
-	resp := SendReq("grok-4-fast", Msgs[:])
+	resp := SendReq(config.ConfigStruct.Ai.Model, Msgs[:])
 	if len(resp.Choices) == 0 {
 		return ""
 	}

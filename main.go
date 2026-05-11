@@ -18,7 +18,6 @@ func main() {
 	config.InitConfig()
 	time.Sleep(1 * time.Second)
 	db.Init()
-	CheckNew()
 	mode := flag.String("mode", "default", "Switch a mode when start")
 	flag.Parse()
 	start(mode)
@@ -28,7 +27,7 @@ func CheckNew() {
 	if !db.IsNew() {
 		return
 	}
-	fmt.Println("检测到您是第一次运行\n是否允许将先前@过的名单加入至艾特列表？\ny(es) or n(o)\n请输入y或n")
+	fmt.Println("检测到您是第一次运行\n是否允许将先前@过的名单加入至艾特列表？\ny(es) or n(o) 默认n\n请输入y或n")
 	input := bufio.NewReader(os.Stdin)
 	str, err := input.ReadString('\n')
 	if err != nil {
@@ -52,6 +51,9 @@ func CheckNew() {
 	case "NO":
 		xhh.DontReply = true
 		return
+	default:
+		xhh.DontReply = true
+		return
 	}
 }
 
@@ -64,6 +66,7 @@ func start(mode *string) {
 	case "login":
 		xhh.Login()
 	case "start":
+		CheckNew()
 		xhh.Init()
 		xhh.Start()
 		select {}
