@@ -62,7 +62,7 @@ func start(mode *string) {
 	case "default":
 		loger.Loger.Info("\nhttps://github.com/SomeOvO/xhhRobot\n你需要输入启动项\n-mode start | login | test")
 	case "test":
-		fmt.Println("hi")
+		fmt.Println("你玩原神吗？")
 	case "login":
 		xhh.Login()
 	case "start":

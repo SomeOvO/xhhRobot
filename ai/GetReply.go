@@ -1,20 +1,41 @@
 package ai
 
 import (
+	"fmt"
+	"strings"
 	"xhhrobot/config"
 	"xhhrobot/loger"
 
 	"go.uber.org/zap"
 )
 
-func GetAiReply(Contents []Content, UserSay string) string {
+type Topics struct {
+	Name string `json:"name"`
+}
+type Tags struct {
+	Name string `json:"name"`
+}
+
+func GetAiReply(Contents []Content, UserSay string, Topics []Topics, Tags []Tags) string {
 	loger.Loger.Info("[Ai]正在询问Ai", zap.Any("Content", Contents))
 	var SMsg Messages[string]
 	var UMsg Messages[[]Content]
 	var Msgs []any
 	SMsg.Role = "system"
 	cfg := config.ConfigStruct.Ai
-	SMsg.Content = cfg.Prompt
+	prompt := cfg.Prompt
+	var topStr strings.Builder
+	for _, v := range Topics {
+		topStr.WriteString(v.Name)
+	}
+	prompt = strings.ReplaceAll(prompt, "?!top!?", topStr.String())
+	var tagStr strings.Builder
+	for _, v := range Tags {
+		tagStr.WriteString(v.Name)
+	}
+	prompt = strings.ReplaceAll(prompt, "?!tag!?", tagStr.String())
+	fmt.Println(prompt)
+	SMsg.Content = prompt
 	//用户
 	UMsg.Role = "user"
 	var UserContent Content

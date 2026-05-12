@@ -116,12 +116,12 @@ func AutoReply() {
 				if v.CommentID != 0 {
 					var isok bool
 					if Check(v.Uid) {
-						Info := GetLinkInfo(v.LinkID)
+						Info, top, tags := GetLinkInfo(v.LinkID)
 						if len(Info) <= 1 {
 							loger.Loger.Info("[XHH]获取LinkID失败")
 							return
 						}
-						ReplyText := ai.GetAiReply(Info, v.Text)
+						ReplyText := ai.GetAiReply(Info, v.Text, top, tags)
 						if ReplyText == "" {
 							loger.Loger.Info("[XHH]Ai返回错误")
 							return

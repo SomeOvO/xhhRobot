@@ -14,8 +14,10 @@ type LinkInfoS struct {
 	Msg    string `json:"msg"`
 	Result struct {
 		Link struct {
-			Title string `json:"title"`
-			Text  string `json:"text"`
+			Title  string      `json:"title"`
+			Text   string      `json:"text"`
+			Topics []ai.Topics `json:"topics"`
+			Tags   []ai.Tags   `json:"hashtags"`
 		} `json:"link"`
 	} `json:"result"`
 	Stat string `json:"status"`
@@ -26,9 +28,8 @@ type TextDetail struct {
 	Url  string `json:"url"`
 }
 
-func GetLinkInfo(LinkID int) (Contents []ai.Content) {
+func GetLinkInfo(LinkID int) (Contents []ai.Content, Topics []ai.Topics, Tags []ai.Tags) {
 	resp := SendReq("GET", "/bbs/app/link/tree", nil, "?h_src&link_id="+strconv.Itoa(LinkID))
-
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		loger.Loger.Error("[XHH]无法读取响应体", zap.Error(err))
@@ -38,11 +39,11 @@ func GetLinkInfo(LinkID int) (Contents []ai.Content) {
 
 	err = json.Unmarshal(data, &RespS)
 	if err != nil {
-		loger.Loger.Error("[XHH]反序列化失败", zap.Error(err))
+		loger.Loger.Error("[XHH]反序列化失败", zap.Error(err), zap.Any("data", string(data)))
 		return
 	}
 	if RespS.Stat != "ok" {
-		loger.Loger.Error("[XHH]返回了错误的内容", zap.Any("info", RespS))
+		loger.Loger.Error("[XHH]返回了错误的内容", zap.Any("info", RespS), zap.Any("data", string(data)))
 		return
 	}
 	var Content []TextDetail
@@ -53,7 +54,7 @@ func GetLinkInfo(LinkID int) (Contents []ai.Content) {
 		return
 	}
 	var Title ai.Content
-	Title.Text = "标题：" + RespS.Result.Link.Title
+	Title.Text = "以下是帖子内容：\n标题：" + RespS.Result.Link.Title
 	Title.Type = "text"
 	Contents = append(Contents, Title)
 	for _, v := range Content {
@@ -74,5 +75,5 @@ func GetLinkInfo(LinkID int) (Contents []ai.Content) {
 		content.Text = v.Text
 		Contents = append(Contents, content)
 	}
-	return Contents
+	return Contents, RespS.Result.Link.Topics, RespS.Result.Link.Tags
 }
