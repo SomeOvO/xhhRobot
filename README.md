@@ -114,7 +114,7 @@ passwd:数据库密码
 ```
 model：模型名
 
-prompt：提示词
+prompt：提示词，你可以使用 ?!top!? 和 ?!tag!? 在提示词中分别代指分区和tags
 
 baseUrl：Api链接，请包含请求的端点，例如：https://yuanshen.com/v1/chat/completions
 
