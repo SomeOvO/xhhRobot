@@ -11,14 +11,24 @@ import (
 	"go.uber.org/zap"
 )
 
-type Messages struct {
+type Content struct {
+	Type   string `json:"type"`
+	ImgUrl struct {
+		Url string `json:"url"`
+	} `json:"image_url"`
+	Text string `json:"text"`
+}
+type Messages[T []Content | string] struct {
+	Role    string `json:"role"`
+	Content T      `json:"content"`
+}
+type SysMsg struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
-
 type BodyStruct struct {
-	Model string     `json:"model"`
-	Msgs  []Messages `json:"messages"`
+	Model string `json:"model"`
+	Msgs  []any  `json:"messages"`
 }
 
 type choice struct {
@@ -37,7 +47,7 @@ type respStruct struct {
 	} `json:"usage"`
 }
 
-func SendReq(Model string, Msg []Messages) (Jresp respStruct) {
+func SendReq(Model string, Msg []any) (Jresp respStruct) {
 	if Model == "" {
 		loger.Loger.Fatal("[Ai]请确保配置文件中的模型是存在的")
 	}

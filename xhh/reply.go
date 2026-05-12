@@ -21,6 +21,10 @@ func Reply(text, link_id, reply_id, root_id, iscy string) (isok bool) {
 	Path := "/bbs/app/comment/create"
 	Body := fmt.Sprintf("is_cy=%s&link_id=%s&reply_id=%s&root_id=%s&text=%s", iscy, link_id, reply_id, root_id, url.QueryEscape(text))
 	resp := SendReq("POST", Path, bytes.NewReader([]byte(Body)), "")
+	if resp == nil {
+		loger.Loger.Error("[XHH]链接发送失败了")
+		return
+	}
 	var resps struct {
 		Status string `json:"status"`
 		Msg    string `json:"msg"`

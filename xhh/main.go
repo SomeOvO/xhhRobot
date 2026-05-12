@@ -12,6 +12,8 @@ import (
 	"xhhrobot/config"
 	"xhhrobot/db"
 	"xhhrobot/loger"
+
+	"go.uber.org/zap"
 )
 
 var Info struct {
@@ -61,21 +63,25 @@ type Respo struct {
 var DontReply bool
 
 func CheckAt() {
-	fmt.Println("[XHH]检查@", time.Now().Unix())
+	fmt.Println("[XHH]检查@", time.Now().Format("2006-01-02 15:04:05"))
 	var offset int
 	nomore := "false"
 	other := fmt.Sprintf("?message_type=16&offset=%v&limit=20&no_more=%s", offset, nomore)
 	resp := SendReq("GET", "/bbs/app/user/message", nil, other)
+	if resp == nil {
+		loger.Loger.Error("[XHH]链接发送失败了")
+		return
+	}
 	var data Respo
 	Dbyte, err := io.ReadAll(resp.Body)
 	if err != nil {
-		loger.Loger.Error("[XHH]无法读取Body")
+		loger.Loger.Error("[XHH]无法读取Body", zap.Error(err))
 		return
 	}
 	err = json.Unmarshal(Dbyte, &data)
 
 	if err != nil {
-		loger.Loger.Error("[XHH]无法反序列化")
+		loger.Loger.Error("[XHH]无法反序列化", zap.Error(err), zap.String("raw", string(Dbyte)))
 		return
 	}
 
@@ -94,45 +100,46 @@ func CheckAt() {
 }
 
 func AutoReply() {
-	Arr := db.GetComm()
-	if len(Arr) == 0 {
-		fmt.Println("[XHH]无可回复", time.Now().Unix())
-		time.Sleep(time.Duration(ReplyTime) * time.Second)
-		AutoReply()
-	}
-	var wg sync.WaitGroup
+	for {
+		Arr := db.GetComm()
+		if len(Arr) == 0 {
+			fmt.Println("[XHH]无可回复", time.Now().Format("2006-01-02 15:04:05"))
+			time.Sleep(time.Duration(ReplyTime) * time.Second)
+			continue
+		}
+		var wg sync.WaitGroup
+		loger.Loger.Info("[XHH]正在回复评论", zap.Int("评论数", len(Arr)))
+		wg.Add(len(Arr))
+		for _, v := range Arr {
+			go func() {
+				defer wg.Done()
+				if v.CommentID != 0 {
+					var isok bool
+					if Check(v.Uid) {
+						Info := GetLinkInfo(v.LinkID)
+						if len(Info) <= 1 {
+							loger.Loger.Info("[XHH]获取LinkID失败")
+							return
+						}
+						ReplyText := ai.GetAiReply(Info, v.Text)
+						if ReplyText == "" {
+							loger.Loger.Info("[XHH]Ai返回错误")
+							return
+						}
+						isok = Reply(ReplyText, strconv.Itoa(v.LinkID), strconv.Itoa(v.CommentID), strconv.Itoa(v.RootID), "")
 
-	wg.Add(len(Arr))
-	for _, v := range Arr {
-		go func() {
-			defer wg.Done()
-			if v.CommentID != 0 {
-				var isok bool
-				if Check(v.Uid) {
-					Info := GetLinkInfo(v.LinkID)
-					if Info == "" {
-						loger.Loger.Info("[XHH]获取LinkID失败")
-						return
 					}
-					ReplyText := ai.Grok(Info, v.Text)
-					if ReplyText == "" {
-						loger.Loger.Info("[XHH]Ai返回错误")
-						return
+					if isok {
+						db.Replyed(v.CommentID)
+					} else {
+						loger.Loger.Error("[XHH]无法回复评论")
 					}
-					isok = Reply(ReplyText, strconv.Itoa(v.LinkID), strconv.Itoa(v.CommentID), strconv.Itoa(v.RootID), "")
-
-				}
-				if isok {
-					db.Replyed(v.CommentID)
 				} else {
-					loger.Loger.Error("[XHH]无法回复评论")
+					wg.Done()
+					fmt.Println("[XHH]无事可做")
 				}
-			} else {
-				wg.Done()
-				fmt.Println("[XHH]无事可做")
-			}
-		}()
+			}()
+		}
+		wg.Wait()
 	}
-	wg.Wait()
-	AutoReply()
 }

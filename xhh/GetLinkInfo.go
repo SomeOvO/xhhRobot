@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"strconv"
+	"xhhrobot/ai"
 	"xhhrobot/loger"
 
 	"go.uber.org/zap"
@@ -25,7 +26,7 @@ type TextDetail struct {
 	Url  string `json:"url"`
 }
 
-func GetLinkInfo(LinkID int) (str string) {
+func GetLinkInfo(LinkID int) (Contents []ai.Content) {
 	resp := SendReq("GET", "/bbs/app/link/tree", nil, "?h_src&link_id="+strconv.Itoa(LinkID))
 
 	data, err := io.ReadAll(resp.Body)
@@ -51,19 +52,27 @@ func GetLinkInfo(LinkID int) (str string) {
 		loger.Loger.Error("[XHH]无法解析内容", zap.Error(err))
 		return
 	}
-	text := ""
-
+	var Title ai.Content
+	Title.Text = "标题：" + RespS.Result.Link.Title
+	Title.Type = "text"
+	Contents = append(Contents, Title)
 	for _, v := range Content {
-		text += RespS.Result.Link.Title + "\n"
+		var content ai.Content
 		if v.Type == "html" {
-			text = v.Text
+			content.Type = "text"
+			content.Text = v.Text
+			Contents = append(Contents, content)
 			break
 		}
 		if v.Type != "text" {
-			text += " " + v.Url
+			content.Type = "image_url"
+			content.ImgUrl.Url = v.Url
+			Contents = append(Contents, content)
 			continue
 		}
-		text += v.Text
+		content.Type = "text"
+		content.Text = v.Text
+		Contents = append(Contents, content)
 	}
-	return text
+	return Contents
 }
