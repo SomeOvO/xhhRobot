@@ -1,10 +1,14 @@
 package xhh
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io"
+	"net/http"
 	"strconv"
+	"strings"
 	"xhhrobot/ai"
+	"xhhrobot/config"
 	"xhhrobot/db"
 	"xhhrobot/loger"
 
@@ -41,13 +45,13 @@ func GetLinkInfo(LinkID int, CommentID int) (Contents []ai.Content, Topics []ai.
 	err = json.Unmarshal(data, &RespS)
 	if err != nil {
 		loger.Loger.Error("[XHH]反序列化失败", zap.Error(err), zap.Any("data", string(data)))
-
 		return
 	}
 	if RespS.Stat != "ok" {
 		if RespS.Stat == "failed" {
 			db.Replyed(CommentID)
 			loger.Loger.Warn("[XHH]原帖无法被查看，所以已标记为完成")
+			return
 		}
 		loger.Loger.Error("[XHH]返回了错误的内容", zap.Any("info", RespS), zap.Any("data", string(data)))
 		return
@@ -82,4 +86,24 @@ func GetLinkInfo(LinkID int, CommentID int) (Contents []ai.Content, Topics []ai.
 		Contents = append(Contents, content)
 	}
 	return Contents, RespS.Result.Link.Topics, RespS.Result.Link.Tags
+}
+
+func GetImgUrl(Url string) string {
+	if config.ConfigStruct.Ai.Model == "" {
+		loger.Loger.Fatal("你真的设置模型了吗")
+	}
+	resp, err := http.Get(Url)
+	if err != nil {
+		loger.Loger.Error("[XHH]无法获取图片信息", zap.Error(err), zap.String("url", Url))
+		return Url
+	}
+	content := strings.Split(resp.Header.Get("content-type"), "/")
+	if content[0] != "image" {
+		loger.Loger.Error("[XHH]响应体并非图片", zap.Error(err), zap.String("url", Url))
+		return Url
+	}
+	Data, err := io.ReadAll(resp.Body)
+	base64 := "data:" + resp.Header.Get("content-type") + ",base64," + base64.StdEncoding.EncodeToString(Data)
+
+	return base64
 }

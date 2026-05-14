@@ -61,6 +61,23 @@ type Respo struct {
 }
 
 var DontReply bool
+var errInfo struct {
+	Count   int
+	LastErr int
+}
+
+func IsErr() {
+	if errInfo.Count < 5 {
+		if (int(time.Now().Unix()) - errInfo.LastErr) < 60*10 {
+			errInfo.Count = 1
+			return
+		}
+		errInfo.LastErr = int(time.Now().Unix())
+		errInfo.Count++
+		return
+	}
+	loger.Loger.Fatal("[XHH]程序十分钟内错误五次，已退出防止频繁")
+}
 
 func CheckAt() {
 	fmt.Println("[XHH]检查@", time.Now().Format("2006-01-02 15:04:05"))
@@ -70,18 +87,21 @@ func CheckAt() {
 	resp := SendReq("GET", "/bbs/app/user/message", nil, other)
 	if resp == nil {
 		loger.Loger.Error("[XHH]链接发送失败了")
+		IsErr()
 		return
 	}
 	var data Respo
 	Dbyte, err := io.ReadAll(resp.Body)
 	if err != nil {
 		loger.Loger.Error("[XHH]无法读取Body", zap.Error(err))
+		IsErr()
 		return
 	}
 	err = json.Unmarshal(Dbyte, &data)
 
 	if err != nil {
 		loger.Loger.Error("[XHH]无法反序列化", zap.Error(err), zap.String("raw", string(Dbyte)))
+		IsErr()
 		return
 	}
 
@@ -119,11 +139,13 @@ func AutoReply() {
 						Info, top, tags := GetLinkInfo(v.LinkID, v.CommentID)
 						if len(Info) <= 1 {
 							loger.Loger.Info("[XHH]获取LinkID失败")
+							IsErr()
 							return
 						}
 						ReplyText := ai.GetAiReply(Info, v.Text, top, tags)
 						if ReplyText == "" {
 							loger.Loger.Info("[XHH]Ai返回错误")
+							IsErr()
 							return
 						}
 						isok = Reply(ReplyText, strconv.Itoa(v.LinkID), strconv.Itoa(v.CommentID), strconv.Itoa(v.RootID), "")
@@ -132,6 +154,7 @@ func AutoReply() {
 					if isok {
 						db.Replyed(v.CommentID)
 					} else {
+						IsErr()
 						loger.Loger.Error("[XHH]无法回复评论")
 					}
 				} else {
