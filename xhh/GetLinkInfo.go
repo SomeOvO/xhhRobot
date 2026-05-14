@@ -92,6 +92,13 @@ func GetImgUrl(Url string) string {
 	if config.ConfigStruct.Ai.Model == "" {
 		loger.Loger.Fatal("你真的设置模型了吗")
 	}
+	modarr := strings.Split(config.ConfigStruct.Ai.Model, "-")
+	if len(modarr) <= 1 {
+		return Url
+	}
+	if modarr[0] != "kimi" {
+		return Url
+	}
 	resp, err := http.Get(Url)
 	if err != nil {
 		loger.Loger.Error("[XHH]无法获取图片信息", zap.Error(err), zap.String("url", Url))
