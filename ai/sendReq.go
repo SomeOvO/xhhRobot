@@ -80,7 +80,7 @@ func SendReq(Model string, Msg []any) (Jresp respStruct) {
 		return
 	}
 	if len(Jresp.Choices) == 0 {
-		loger.Loger.Fatal("[Ai]Ai返回错误", zap.Any("Resp", resp))
+		loger.Loger.Error("[Ai]Ai返回错误", zap.Any("Resp", string(Dresp)))
 		return
 	}
 	return Jresp

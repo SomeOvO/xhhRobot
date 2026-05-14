@@ -48,7 +48,7 @@ func GetAiReply(Contents []Content, UserSay string, Topics []Topics, Tags []Tags
 	aiModel := config.ConfigStruct.Ai.Model
 	resp := SendReq(aiModel, Msgs)
 	if len(resp.Choices) == 0 {
-		loger.Loger.Fatal("[Ai]Ai返回错误", zap.Any("Resp", resp))
+		loger.Loger.Error("[Ai]Ai返回错误", zap.Any("Resp", resp))
 		return ""
 	}
 	text := resp.Choices[0].Msg.Content
