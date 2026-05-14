@@ -62,7 +62,8 @@ func start(mode *string) {
 	case "default":
 		loger.Loger.Info("\nhttps://github.com/SomeOvO/xhhRobot\n你需要输入启动项\n-mode start | login | test")
 	case "test":
-		fmt.Println("你玩原神吗？")
+		url := xhh.GetImgUrl("https://imgheybox1.max-c.com/bbs/2025/05/11/4b2c546b19aec7b8602c90dbd976d69c.gif?imageMogr2/auto-orient/ignore-error/1/thumbnail/850x1450%3E")
+		fmt.Println(url)
 	case "login":
 		xhh.Login()
 	case "start":

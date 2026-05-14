@@ -77,7 +77,7 @@ func GetLinkInfo(LinkID int, CommentID int) (Contents []ai.Content, Topics []ai.
 		}
 		if v.Type != "text" {
 			content.Type = "image_url"
-			content.ImgUrl.Url = v.Url
+			content.ImgUrl.Url = GetImgUrl(v.Url)
 			Contents = append(Contents, content)
 			continue
 		}
@@ -89,10 +89,11 @@ func GetLinkInfo(LinkID int, CommentID int) (Contents []ai.Content, Topics []ai.
 }
 
 func GetImgUrl(Url string) string {
-	if config.ConfigStruct.Ai.Model == "" {
+	Model := config.ConfigStruct.Ai.Model
+	if Model == "" {
 		loger.Loger.Fatal("你真的设置模型了吗")
 	}
-	modarr := strings.Split(config.ConfigStruct.Ai.Model, "-")
+	modarr := strings.Split(Model, "-")
 	if len(modarr) <= 1 {
 		return Url
 	}
