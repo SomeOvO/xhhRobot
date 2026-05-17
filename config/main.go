@@ -25,10 +25,12 @@ var ConfigStruct struct {
 		Passwd string `json:"passwd"`
 	} `json:"database"`
 	Ai struct {
-		Model   string `json:"model"`
-		Prompt  string `json:"prompt"`
-		BaseUrl string `json:"baseUrl"`
-		Token   string `json:"token"`
+		Model             string `json:"model"`
+		Prompt            string `json:"prompt"`
+		BaseUrl           string `json:"baseUrl"`
+		Token             string `json:"token"`
+		WebSearch         bool   `json:"webSearch"`
+		SearchContextSize string `json:"searchContextSize"`
 	} `json:"ai"`
 }
 
