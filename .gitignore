@@ -4,3 +4,7 @@ sql.db
 main
 main.exe
 *.png
+go/
+.gopath/
+zig/
+zig-*.zip

@@ -3,6 +3,7 @@ package xhh
 import (
 	"encoding/json"
 	"io"
+	"net/http"
 	"strconv"
 	"xhhrobot/ai"
 	"xhhrobot/db"
@@ -31,9 +32,19 @@ type TextDetail struct {
 
 func GetLinkInfo(LinkID int, CommentID int) (Contents []ai.Content, Topics []ai.Topics, Tags []ai.Tags) {
 	resp := SendReq("GET", "/bbs/app/link/tree", nil, "?h_src&link_id="+strconv.Itoa(LinkID))
+	if resp == nil {
+		loger.Loger.Error("[XHH]获取帖子详情请求失败")
+		return
+	}
+	defer resp.Body.Close()
+
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		loger.Loger.Error("[XHH]无法读取响应体", zap.Error(err))
+		return
+	}
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		loger.Loger.Error("[XHH]获取帖子详情失败", zap.Int("status", resp.StatusCode), zap.String("raw", string(data)))
 		return
 	}
 	var RespS LinkInfoS
