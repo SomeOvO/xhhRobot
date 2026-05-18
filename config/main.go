@@ -30,6 +30,7 @@ var ConfigStruct struct {
 		BaseUrl           string `json:"baseUrl"`
 		Token             string `json:"token"`
 		WebSearch         bool   `json:"webSearch"`
+		ForceWebSearch    bool   `json:"forceWebSearch"`
 		SearchContextSize string `json:"searchContextSize"`
 	} `json:"ai"`
 }

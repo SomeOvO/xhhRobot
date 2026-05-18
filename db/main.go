@@ -66,7 +66,7 @@ type CommStruct struct {
 func GetComm() (CommArr []CommStruct) {
 	ctx := context.Background()
 	if cfg.Type == "pg" {
-		row, err := pg.Conn.Query(ctx, "SELECT link_id,comment_a_id,comment_root_id,comment_text,user_a_id FROM at WHERE reply=false LIMIT 3")
+		row, err := pg.Conn.Query(ctx, "SELECT link_id,comment_a_id,comment_root_id,comment_text,user_a_id FROM at WHERE reply=false AND comment_a_id<>0 AND link_id<>0 LIMIT 3")
 		if err != nil {
 			loger.Loger.Error("[DB]无法获取评论信息", zap.Error(err))
 			return
@@ -79,7 +79,7 @@ func GetComm() (CommArr []CommStruct) {
 		return
 	}
 	if cfg.Type == "sqlite" {
-		row, err := sqlite.Db.Query("SELECT link_id,comment_a_id,comment_root_id,comment_text,user_a_id FROM at WHERE reply=false LIMIT 3")
+		row, err := sqlite.Db.Query("SELECT link_id,comment_a_id,comment_root_id,comment_text,user_a_id FROM at WHERE reply=false AND comment_a_id<>0 AND link_id<>0 LIMIT 3")
 		if err != nil {
 			loger.Loger.Error("[DB]无法获取评论信息", zap.Error(err))
 			return

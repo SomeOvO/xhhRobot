@@ -158,7 +158,6 @@ func AutoReply() {
 						loger.Loger.Error("[XHH]无法回复评论")
 					}
 				} else {
-					wg.Done()
 					fmt.Println("[XHH]无事可做")
 				}
 			}()

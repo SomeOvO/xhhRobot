@@ -35,10 +35,11 @@ type BodyStruct struct {
 }
 
 type responsesBodyStruct struct {
-	Model  string                 `json:"model"`
-	Input  []responsesInputMsg    `json:"input"`
-	Tools  []responsesWebTool     `json:"tools,omitempty"`
-	Stream bool                   `json:"stream"`
+	Model      string              `json:"model"`
+	Input      []responsesInputMsg `json:"input"`
+	Tools      []responsesWebTool  `json:"tools,omitempty"`
+	ToolChoice string              `json:"tool_choice,omitempty"`
+	Stream     bool                `json:"stream"`
 }
 
 type responsesInputMsg struct {
@@ -161,6 +162,9 @@ func buildReqBody(Model string, Msg []any) ([]byte, error) {
 				tool.SearchContextSize = cfg.SearchContextSize
 			}
 			body.Tools = []responsesWebTool{tool}
+			if cfg.ForceWebSearch {
+				body.ToolChoice = "required"
+			}
 		}
 		return json.Marshal(body)
 	}
