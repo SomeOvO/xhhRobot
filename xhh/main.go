@@ -63,60 +63,66 @@ type Respo struct {
 var DontReply bool
 var errInfo struct {
 	Count   int
-	LastErr int
+	LastErr time.Time
 }
 
 func IsErr() {
-	if errInfo.Count < 5 {
-		if (int(time.Now().Unix()) - errInfo.LastErr) < 60*10 {
-			errInfo.Count = 1
-			return
-		}
-		errInfo.LastErr = int(time.Now().Unix())
-		errInfo.Count++
+	now := time.Now()
+
+	if now.Sub(errInfo.LastErr) > 10*time.Minute {
+		errInfo.Count = 1
+		errInfo.LastErr = now
 		return
 	}
-	loger.Loger.Fatal("[XHH]程序十分钟内错误五次，已退出防止频繁")
+
+	errInfo.Count++
+
+	if errInfo.Count >= 5 {
+		loger.Loger.Fatal("[XHH]程序十分钟内错误五次，已退出防止频繁错误")
+	}
 }
 
 func CheckAt() {
-	fmt.Println("[XHH]检查@", time.Now().Format("2006-01-02 15:04:05"))
-	var offset int
-	nomore := "false"
-	other := fmt.Sprintf("?message_type=16&offset=%v&limit=20&no_more=%s", offset, nomore)
-	resp := SendReq("GET", "/bbs/app/user/message", nil, other)
-	if resp == nil {
-		loger.Loger.Error("[XHH]链接发送失败了")
-		IsErr()
-		return
-	}
-	var data Respo
-	Dbyte, err := io.ReadAll(resp.Body)
-	if err != nil {
-		loger.Loger.Error("[XHH]无法读取Body", zap.Error(err))
-		IsErr()
-		return
-	}
-	err = json.Unmarshal(Dbyte, &data)
+	for {
+		fmt.Println("[XHH]检查@", time.Now().Format("2006-01-02 15:04:05"))
+		var offset int
+		nomore := "false"
+		other := fmt.Sprintf("?message_type=16&offset=%v&limit=20&no_more=%s", offset, nomore)
+		resp := SendReq("GET", "/bbs/app/user/message", nil, other)
+		if resp == nil {
+			loger.Loger.Error("[XHH]链接发送失败了")
+			IsErr()
+			continue
+		}
 
-	if err != nil {
-		loger.Loger.Error("[XHH]无法反序列化", zap.Error(err), zap.String("raw", string(Dbyte)))
-		IsErr()
-		return
-	}
+		var data Respo
+		Dbyte, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
 
-	for _, v := range data.Result.Messages {
-		if Check(v.UserID) {
-			if DontReply {
-				db.Insert(v.MsgID, v.CommentID, v.RootCommentID, v.LinkID, v.UserID, v.CommentText, true)
-			} else {
-				db.Insert(v.MsgID, v.CommentID, v.RootCommentID, v.LinkID, v.UserID, v.CommentText, false)
+		if err != nil {
+			loger.Loger.Error("[XHH]无法读取Body", zap.Error(err))
+			IsErr()
+			continue
+		}
+		err = json.Unmarshal(Dbyte, &data)
+		if err != nil {
+			loger.Loger.Error("[XHH]无法反序列化", zap.Error(err), zap.String("raw", string(Dbyte)))
+			IsErr()
+			continue
+		}
+
+		for _, v := range data.Result.Messages {
+			if Check(v.UserID) {
+				if DontReply {
+					db.Insert(v.MsgID, v.CommentID, v.RootCommentID, v.LinkID, v.UserID, v.CommentText, true)
+				} else {
+					db.Insert(v.MsgID, v.CommentID, v.RootCommentID, v.LinkID, v.UserID, v.CommentText, false)
+				}
 			}
 		}
+		DontReply = false
+		time.Sleep(time.Duration(CheckTime) * time.Second)
 	}
-	DontReply = false
-	time.Sleep(time.Duration(CheckTime) * time.Second)
-	CheckAt()
 }
 
 func AutoReply() {
@@ -165,5 +171,4 @@ func AutoReply() {
 		wg.Wait()
 		time.Sleep(time.Duration(ReplyTime) * time.Second)
 	}
-
 }
