@@ -4,15 +4,15 @@ import (
 	"database/sql"
 	"xhhrobot/loger"
 
-	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
+	_ "modernc.org/sqlite"
 )
 
 var Db *sql.DB
 
 func Init() {
 	var err error
-	Db, err = sql.Open("sqlite3", "./sql.db")
+	Db, err = sql.Open("sqlite", "./sql.db")
 	if err != nil {
 		loger.Loger.Fatal("[SQLite]无法读取文件", zap.Error(err))
 	}
