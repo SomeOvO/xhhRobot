@@ -27,7 +27,7 @@ var ReplyTime int
 func Init() {
 	file, err := os.ReadFile("./cookie.json")
 	if err != nil {
-		loger.Loger.Info("[XHH]未检测到Cookie")
+		loger.Loger.Fatal("[XHH]未检测到Cookie，请先登陆")
 		return
 	}
 	CheckTime = config.ConfigStruct.Xhh.CheckTime
