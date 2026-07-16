@@ -111,3 +111,19 @@ func IsNew() bool {
 		return true
 	}
 }
+
+// 若全都已回复，则回退到最大的msg_id，不管是否已回复
+// 数据库为空则返回0
+func GetNewestMsgIDNotReplied() int {
+	ctx := context.Background()
+	var msgID int
+	if cfg.Type == "pg" {
+		row := pg.Conn.QueryRow(ctx, "SELECT COALESCE((SELECT msg_id FROM at WHERE reply=$1 ORDER BY msg_id DESC LIMIT 1), (SELECT MAX(msg_id) FROM at), 0)", false)
+		row.Scan(&msgID)
+	}
+	if cfg.Type == "sqlite" {
+		row := sqlite.Db.QueryRow("SELECT COALESCE((SELECT msg_id FROM at WHERE reply=? ORDER BY msg_id DESC LIMIT 1), (SELECT MAX(msg_id) FROM at), 0)", false)
+		row.Scan(&msgID)
+	}
+	return msgID
+}

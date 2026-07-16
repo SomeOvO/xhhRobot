@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"strconv"
 	"sync"
@@ -83,44 +84,105 @@ func IsErr() {
 }
 
 func CheckAt() {
-	for {
-		fmt.Println("[XHH]检查@", time.Now().Format("2006-01-02 15:04:05"))
-		var offset int
-		nomore := "false"
-		other := fmt.Sprintf("?message_type=16&offset=%v&limit=20&no_more=%s", offset, nomore)
-		resp := SendReq("GET", "/bbs/app/user/message", nil, other)
-		if resp == nil {
-			loger.Loger.Error("[XHH]链接发送失败了")
-			IsErr()
-			continue
-		}
+	// 依赖api返回的msg_id是从新到旧，即msg_id从大到小
+	lastMsgID := 0 // 储存上一轮查询的最大msg_id，也就是上一轮查询过的最新的
 
-		var data Respo
-		Dbyte, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
+	// 初始化lastMsgID
+	if db.IsNew() {
+		if DontReply {
+			other := fmt.Sprintf("?message_type=16&offset=%v&limit=%v&no_more=%s", 0, 1, "false")
+			resp := SendReq("GET", "/bbs/app/user/message", nil, other)
+			if resp == nil {
+				loger.Loger.Error("[XHH]链接发送失败了")
+				IsErr()
+			}
 
-		if err != nil {
-			loger.Loger.Error("[XHH]无法读取Body", zap.Error(err))
-			IsErr()
-			continue
-		}
-		err = json.Unmarshal(Dbyte, &data)
-		if err != nil {
-			loger.Loger.Error("[XHH]无法反序列化", zap.Error(err), zap.String("raw", string(Dbyte)))
-			IsErr()
-			continue
-		}
+			var data Respo
+			Dbyte, err := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			if err != nil {
+				loger.Loger.Error("[XHH]无法读取Body", zap.Error(err))
+				IsErr()
+			}
 
-		for _, v := range data.Result.Messages {
-			if Check(v.UserID) {
-				if DontReply {
-					db.Insert(v.MsgID, v.CommentID, v.RootCommentID, v.LinkID, v.UserID, v.CommentText, true)
-				} else {
-					db.Insert(v.MsgID, v.CommentID, v.RootCommentID, v.LinkID, v.UserID, v.CommentText, false)
-				}
+			err = json.Unmarshal(Dbyte, &data)
+			if err != nil {
+				loger.Loger.Error("[XHH]无法反序列化", zap.Error(err), zap.String("raw", string(Dbyte)))
+				IsErr()
+			}
+
+			// 若没有@，则初始化为0
+			// 上面出错不退出，也初始化为0，就是会翻页翻到底
+			if len(data.Result.Messages) > 0 {
+				lastMsgID = data.Result.Messages[0].MsgID
 			}
 		}
-		DontReply = false
+
+		// 需要回复的情况由于lastMsgID初始化为零，会通过不断翻页处理
+	} else {
+		lastMsgID = db.GetNewestMsgIDNotReplied()
+	}
+	fmt.Println("[XHH]初始化lastMsgID为", lastMsgID, time.Now().Format("2006-01-02 15:04:05"))
+
+	for {
+		fmt.Println("[XHH]检查@", time.Now().Format("2006-01-02 15:04:05"))
+		limit := 20
+		nomore := "false"
+		newLastMsgID := lastMsgID // 用于储存这一次查询的最新msg_id
+		curMsgID := math.MaxInt   // 用于遍历这一轮的msg，直到上一轮的查询的最新msg_id为止
+
+		for offset := 0; curMsgID > lastMsgID; offset += limit {
+			other := fmt.Sprintf("?message_type=16&offset=%v&limit=%v&no_more=%s", offset, limit, nomore)
+			resp := SendReq("GET", "/bbs/app/user/message", nil, other)
+			if resp == nil {
+				loger.Loger.Error("[XHH]链接发送失败了")
+				IsErr()
+				continue
+			}
+
+			var data Respo
+			Dbyte, err := io.ReadAll(resp.Body)
+			resp.Body.Close()
+
+			if err != nil {
+				loger.Loger.Error("[XHH]无法读取Body", zap.Error(err))
+				IsErr()
+				continue
+			}
+			err = json.Unmarshal(Dbyte, &data)
+			if err != nil {
+				loger.Loger.Error("[XHH]无法反序列化", zap.Error(err), zap.String("raw", string(Dbyte)))
+				IsErr()
+				continue
+			}
+
+			msgsLen := len(data.Result.Messages)
+			if msgsLen == 0 {
+				// 处理lastMsgID==0的情况，遍历页直到api返回空退出
+				break
+			}
+			if offset == 0 {
+				newLastMsgID = data.Result.Messages[0].MsgID
+			}
+			curMsgID = data.Result.Messages[msgsLen-1].MsgID // 更新为这一页最小的msg_id
+
+			for _, v := range data.Result.Messages {
+				if Check(v.UserID) {
+					if DontReply {
+						db.Insert(v.MsgID, v.CommentID, v.RootCommentID, v.LinkID, v.UserID, v.CommentText, true)
+					} else {
+						db.Insert(v.MsgID, v.CommentID, v.RootCommentID, v.LinkID, v.UserID, v.CommentText, false)
+					}
+				}
+			}
+
+			DontReply = false
+			// time.Sleep(time.Duration(3) * time.Second)
+			// 不在此处sleep应该不会风控
+			// limit设置大一些大可改善，但是感觉应该没那么多人用
+		}
+
+		lastMsgID = newLastMsgID
 		time.Sleep(time.Duration(CheckTime) * time.Second)
 	}
 }
