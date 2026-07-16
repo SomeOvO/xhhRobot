@@ -49,3 +49,24 @@ func RunTest() {
 	fmt.Println("\n=== AI 回复 ===")
 	fmt.Println(reply)
 }
+func NoAiTest() {
+	fmt.Println("=== 测试模式 ===")
+
+	Init()
+	if Info.Cookie == "" {
+		fmt.Println("未检测到 cookie，请先运行 -mode login")
+		return
+	}
+
+	fmt.Print("输入帖子 ID：")
+	reader := bufio.NewReader(os.Stdin)
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimRight(input, "\r\n")
+
+	linkID, _ := strconv.Atoi(input)
+	if linkID == 0 {
+		fmt.Println("帖子 ID 不合法")
+		return
+	}
+	Reply("test", input, "", "", "0")
+}
