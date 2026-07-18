@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
 	"xhhrobot/config"
 	"xhhrobot/loger"
 
@@ -27,10 +28,50 @@ type SysMsg struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
+
+type ToolDef struct {
+	Type     string   `json:"type"` // 固定 "function"
+	Function ToolFunc `json:"function"`
+}
+
+type ToolFunc struct {
+	Name        string         `json:"name"`
+	Description string         `json:"description"`
+	Parameters  map[string]any `json:"parameters"`
+}
+
+// AI 返回的工具调用
+type ToolCall struct {
+	ID       string       `json:"id"`
+	Type     string       `json:"type"` // 固定 "function"
+	Function ToolCallFunc `json:"function"`
+}
+
+type ToolCallFunc struct {
+	Name      string `json:"name"`
+	Arguments string `json:"arguments"` // JSON 字符串，非 map
+}
+
+// 多轮对话中 AI 决定调用工具时的 assistant 消息
+type AssistantToolMsg struct {
+	Role      string     `json:"role"` // "assistant"
+	Content   any        `json:"content"`
+	ToolCalls []ToolCall `json:"tool_calls,omitempty"`
+}
+
+// 工具执行结果消息
+type ToolResultMsg struct {
+	Role       string `json:"role"` // "tool"
+	ToolCallID string `json:"tool_call_id"`
+	Content    string `json:"content"`
+}
+
 type BodyStruct struct {
 	Model            string         `json:"model"`
 	Msgs             []any          `json:"messages,omitempty"`
 	Stream           bool           `json:"stream"`
+	Tools            []ToolDef      `json:"tools,omitempty"`
+	ToolChoice       string         `json:"tool_choice,omitempty"`
 	WebSearchOptions map[string]any `json:"web_search_options,omitempty"`
 }
 
@@ -58,13 +99,17 @@ type responsesWebTool struct {
 	SearchContextSize string `json:"search_context_size,omitempty"`
 }
 
+type Message struct {
+	Role      string     `json:"role"`
+	Content   string     `json:"content"`
+	Reason    string     `json:"reasoning_content"`
+	ToolCalls []ToolCall `json:"tool_calls,omitempty"`
+}
+
 type choice struct {
-	Index int `json:"index"`
-	Msg   struct {
-		Role    string `json:"role"`
-		Content string `json:"content"`
-		Reason  string `json:"reasoning_content"`
-	} `json:"message"`
+	Index        int     `json:"index"`
+	Msg          Message `json:"message"`
+	FinishReason string  `json:"finish_reason"`
 }
 
 type respStruct struct {
@@ -142,7 +187,6 @@ func SendReq(Model string, Msg []any) (Jresp respStruct) {
 		return
 	}
 	return Jresp
-
 }
 
 func buildReqBody(Model string, Msg []any) ([]byte, error) {
@@ -173,6 +217,12 @@ func buildReqBody(Model string, Msg []any) ([]byte, error) {
 		Model: Model,
 		Msgs:  Msg,
 	}
+	// 注入tools
+	if mcpMgr != nil && len(mcpMgr.cachedToolDefs) > 0 {
+		body.Tools = mcpMgr.cachedToolDefs
+		body.ToolChoice = "auto"
+	}
+
 	if cfg.WebSearch {
 		body.WebSearchOptions = map[string]any{}
 		if strings.HasPrefix(strings.ToLower(Model), "gpt-5.4") {
