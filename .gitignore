@@ -8,3 +8,4 @@ go/
 .gopath/
 zig/
 zig-*.zip
+!config.example.json

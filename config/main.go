@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"os"
+
 	"xhhrobot/loger"
 )
 
@@ -32,6 +33,17 @@ var ConfigStruct struct {
 		WebSearch         bool   `json:"webSearch"`
 		ForceWebSearch    bool   `json:"forceWebSearch"`
 		SearchContextSize string `json:"searchContextSize"`
+		MCP               struct {
+			Enabled           bool `json:"enabled"`
+			MaxRounds         int  `json:"maxRounds"`
+			ToolCallTimeLimit int  `json:"toolCallTimeLimit"`
+			UseOSEnv          bool `json:"useOSEnv"`
+			MCPServers        map[string]struct {
+				Command string            `json:"command"`
+				Args    []string          `json:"args"`
+				Env     map[string]string `json:"env"`
+			} `json:"mcpServers"`
+		} `json:"mcp"`
 	} `json:"ai"`
 }
 

@@ -5,8 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
+
+	"xhhrobot/ai"
 	"xhhrobot/config"
 	"xhhrobot/db"
 	"xhhrobot/loger"
@@ -18,9 +22,12 @@ func main() {
 	config.InitConfig()
 	time.Sleep(1 * time.Second)
 	db.Init()
+	ai.Init()
 	mode := flag.String("mode", "default", "Switch a mode when start")
 	flag.Parse()
 	start(mode)
+	loger.Loger.Info("[MAIN]正在关闭...")
+	ai.Close()
 }
 
 func CheckNew() {
@@ -69,8 +76,8 @@ func start(mode *string) {
 		CheckNew()
 		xhh.Init()
 		xhh.Start()
-		select {}
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+		<-sigCh
 	}
-
 }
-
