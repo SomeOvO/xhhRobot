@@ -27,6 +27,7 @@ func Reply(text, link_id, reply_id, root_id, iscy string) (isok bool) {
 		loger.Loger.Error("[XHH]链接发送失败了")
 		return
 	}
+	defer resp.Body.Close()
 	var resps struct {
 		Status string `json:"status"`
 		Msg    string `json:"msg"`
