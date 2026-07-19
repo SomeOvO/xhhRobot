@@ -2,7 +2,10 @@
   "xhh": {
     "checkTime": 10,
     "replyTime": 30,
-    "owner": "user_ids,you_want_to,reply",
+    "userFilter": {
+      "mode": "blacklist_or_whitelist",
+      "userIDs": "user_ids,to_reply,or_not"
+    },
     "deviceID": "",
     "baseUrl": "https://api.xiaoheihe.cn",
     "webver": "2.5",
@@ -37,7 +40,7 @@
             "mcp-server-example"
           ],
           "env": {
-            "SOME_ENVS":"SOME_ENVS"
+            "SOME_ENVS": "SOME_ENVS"
           }
         }
       }

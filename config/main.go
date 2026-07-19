@@ -9,13 +9,16 @@ import (
 
 var ConfigStruct struct {
 	Xhh struct {
-		CheckTime int    `json:"checkTime"`
-		ReplyTime int    `json:"replyTime"`
-		Owner     string `json:"owner"`
-		DeviceID  string `json:"deviceID"`
-		BaseUrl   string `json:"baseUrl"`
-		WebVer    string `json:"webver"`
-		Ver       string `json:"version"`
+		CheckTime  int `json:"checkTime"`
+		ReplyTime  int `json:"replyTime"`
+		UserFilter struct {
+			Mode    string `json:"mode"`
+			UserIDs string `json:"userIDs"`
+		} `json:"userFilter"`
+		DeviceID string `json:"deviceID"`
+		BaseUrl  string `json:"baseUrl"`
+		WebVer   string `json:"webver"`
+		Ver      string `json:"version"`
 	} `json:"xhh"`
 	DataBase struct {
 		Type   string `json:"type"`
