@@ -30,6 +30,15 @@ func RunTest() {
 		return
 	}
 
+	fmt.Print("输入 @ 你的用户 UID：")
+	uidInput, _ := reader.ReadString('\n')
+	uidInput = strings.TrimRight(uidInput, "\r\n")
+	uid, _ := strconv.Atoi(uidInput)
+	if !Check(uid) {
+		fmt.Printf("UID被过滤\n")
+		return
+	}
+
 	fmt.Print("输入 @ 你的消息内容：")
 	msg, _ := reader.ReadString('\n')
 	msg = strings.TrimRight(msg, "\r\n")
