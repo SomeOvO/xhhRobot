@@ -53,7 +53,7 @@ func SendRequst(RequstBody *RequstBody) (*http.Response, *[]byte, error) {
 func makeBody(Body *RequstBody) error {
 	XhhConfig := cfg.Config.Xhh
 	DefaultMethod := "GET"
-	DefaultUrl := XhhConfig.BaseUrl
+	DefaultUrl := XhhConfig[cfg.CONFIG_XHH_BASEURL]
 	if Body.Method == nil {
 		Body.Method = &DefaultMethod
 	}
@@ -62,7 +62,7 @@ func makeBody(Body *RequstBody) error {
 		return errors.New("请求路径不可为空")
 	}
 	if Body.Url == nil {
-		RequstUrl, err := url.Parse(DefaultUrl)
+		RequstUrl, err := url.Parse(DefaultUrl.Value)
 		if err != nil {
 			return err
 		}
@@ -80,13 +80,13 @@ func makeBody(Body *RequstBody) error {
 	query.Set("os_type", "web")
 	query.Set("app", "web")
 	query.Set("client_type", "web")
-	query.Set("version", XhhConfig.Version)
-	query.Set("web_version", XhhConfig.WebVer)
+	query.Set("version", XhhConfig[cfg.CONFIG_XHH_VERSION].Value)
+	query.Set("web_version", XhhConfig[cfg.CONFIG_XHH_WEBVER].Value)
 	query.Set("x_client_type", "web")
 	query.Set("x_app", "heybox_website")
 	query.Set("x_os_type", "Windows")
 	query.Set("device_info", "Chrome")
-	query.Set("device_id", XhhConfig.DeviceID)
+	query.Set("device_id", XhhConfig[cfg.CONFIG_XHH_DEVICEID].Value)
 	query.Set("hkey", hkey)
 	query.Set("_time", strconv.Itoa(time))
 	query.Set("nonce", nonce)

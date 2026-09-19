@@ -4,25 +4,53 @@ import (
 	"database/sql"
 	"heybox/database"
 	"heybox/log"
+	"os"
 
 	_ "modernc.org/sqlite"
 )
 
 var db *sql.DB
+var sqlite database.DataBase
 
 func Init() {
 	log.DebugLog("数据库为：SQLite")
-	database.Init = connect
+
+	sqlite.Conn = connect
+
+	var sqlite_config database.Config
+	sqlite_config.Set = config_set
+	sqlite_config.Get = config_get
+	sqlite.Config = sqlite_config
+
+	sqlite.Remove = remove
+	database.Db = &sqlite
 }
 
-func connect() {
+func connect() error {
 	var err error
-	db, err = sql.Open("sqlite", "./sql.db")
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	db, err = sql.Open("sqlite", wd+"/sql.db")
 	if err != nil {
 		log.Loger.Fatal("无法链接至数据", err)
+		return err
 	}
 	err = db.Ping()
 	if err != nil {
 		log.Loger.Fatal("测试数据库链接失败", err)
+		return err
 	}
+	return createDatabase()
+}
+
+func createDatabase() error {
+	for _, v := range database.DatabaseList {
+		_, err := db.Exec(v)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
