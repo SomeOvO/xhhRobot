@@ -10,7 +10,17 @@ package database
 //reply_user_id 要回复的用户的id
 //comment_text 回复内容
 
-var DatabaseList = []string{dataBase_AT, dataBase_Config}
+var DatabaseList = []string{
+	dataBase_AT,
+	dataBase_Config,
+	dataBase_Cookies,
+}
+
+type TYPE_Config struct {
+	Name   int
+	Value  string
+	Enable bool
+}
 
 const dataBase_AT = `
 	CREATE TABLE IF NOT EXISTS at (
@@ -30,5 +40,15 @@ CREATE TABLE IF NOT EXISTS cfg (
    name INT PRIMARY KEY,
    value TEXT,
    enable BOLLEAN
+)
+`
+
+//登陆账号存储
+const dataBase_Cookies = `
+CREATE TABLE IF NOT EXISTS cookies (
+uid BIGINT PRIMARY KEY,
+pkey TEXT,
+token TEXT,
+create_at TIMESTAMP
 )
 `

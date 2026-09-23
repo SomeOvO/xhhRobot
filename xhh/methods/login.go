@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"heybox/database"
 	"heybox/xhh"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/skip2/go-qrcode"
@@ -39,21 +41,25 @@ func Login() error {
 	if qr == "" {
 		return errors.New("获取到的qr为空")
 	}
+	//创建定时器，我忘了超时时间是多少了
 	ticker := time.Tick(1 * time.Second)
 	start := time.Now().Unix()
+	var Cookies []*http.Cookie
 	for range ticker {
+		//先暂定300吧，真的有人会超时吗？
 		if time.Now().Unix()-start > 300 {
 			return errors.New("登陆超时")
 		}
-		err, isok := check(qr)
+		err, isok, cookie := check(qr)
 		if err != nil {
 			return err
 		}
 		if isok {
+			Cookies = cookie
 			break
 		}
 	}
-	return nil
+	return savecookie(Cookies)
 }
 
 func getqrcode() (url string, err error) {
@@ -82,12 +88,14 @@ func getqrcode() (url string, err error) {
 	fmt.Println("如无法扫码，可查看运行目录下的qrcode.png")
 	return Body.Result.Qrcode, nil
 }
-func check(qr string) (err error, isok bool) {
+
+// err返回的是错误，若无错误有可能是未登录，则需要isok来判断。但是为什么不直接判断Cookie呢？
+func check(qr string) (err error, isok bool, cookies []*http.Cookie) {
 	var RequstBody xhh.RequstBody
 	RequstBody.Path = "/account/qr_state/"
 	query := "qr=" + qr
 	RequstBody.Query = &query
-	_, respBytes, err := xhh.SendRequst(&RequstBody)
+	respData, respBytes, err := xhh.SendRequst(&RequstBody)
 	if err != nil {
 		return
 	}
@@ -100,6 +108,7 @@ func check(qr string) (err error, isok bool) {
 		fmt.Println("\r\n登陆成功")
 		fmt.Printf("欢迎 > %s", body.Result.NickName)
 		isok = true
+		cookies = respData.Cookies()
 	} else {
 		msg := body.Result.ErrMsg
 		if msg == "" {
@@ -109,6 +118,27 @@ func check(qr string) (err error, isok bool) {
 	}
 	return
 }
-func savecookie(Cookies []*http.Cookie) {
 
+// 保存Cookie user_pkey user_heybox_id id
+func savecookie(Cookies []*http.Cookie) error {
+	var pkey, token, id *string
+	for _, v := range Cookies {
+		if v.Name == "user_pkey" {
+			pkey = &v.Value
+		}
+		if v.Name == "x_xhh_tokenid" {
+			token = &v.Value
+		}
+		if v.Name == "heybox_id" {
+			id = &v.Value
+		}
+	}
+	if pkey == nil || token == nil || id == nil {
+		return fmt.Errorf("缺少Cookie关键字,pkey:%v,token:%v,id:%v", pkey, token, id)
+	}
+	uid_Int, err := strconv.Atoi(*id)
+	if err != nil {
+		return err
+	}
+	return database.Db.Xhh.SaveCookie(uid_Int, *pkey, *token)
 }

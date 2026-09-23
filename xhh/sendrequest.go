@@ -22,6 +22,7 @@ const (
 	GET string = "GET"
 )
 
+// 这一路只做网络的请求，请求体在下面的函数
 func SendRequst(RequstBody *RequstBody) (*http.Response, *[]byte, error) {
 	if err := makeBody(RequstBody); err != nil {
 		return nil, nil, err
@@ -51,9 +52,11 @@ func SendRequst(RequstBody *RequstBody) (*http.Response, *[]byte, error) {
 
 // 构建请求体
 func makeBody(Body *RequstBody) error {
-	XhhConfig := cfg.Config.Xhh
 	DefaultMethod := "GET"
-	DefaultUrl := XhhConfig[cfg.CONFIG_XHH_BASEURL]
+	DefaultUrl := cfg.Config[cfg.CONFIG_XHH_BASEURL]
+	DefaultVersion := cfg.Config[cfg.CONFIG_XHH_VERSION]
+	DefaultWebver := cfg.Config[cfg.CONFIG_XHH_WEBVER]
+	DefaultDeviceID := cfg.Config[cfg.CONFIG_XHH_DEVICEID]
 	if Body.Method == nil {
 		Body.Method = &DefaultMethod
 	}
@@ -80,13 +83,13 @@ func makeBody(Body *RequstBody) error {
 	query.Set("os_type", "web")
 	query.Set("app", "web")
 	query.Set("client_type", "web")
-	query.Set("version", XhhConfig[cfg.CONFIG_XHH_VERSION].Value)
-	query.Set("web_version", XhhConfig[cfg.CONFIG_XHH_WEBVER].Value)
+	query.Set("version", DefaultVersion.Value)
+	query.Set("web_version", DefaultWebver.Value)
 	query.Set("x_client_type", "web")
 	query.Set("x_app", "heybox_website")
 	query.Set("x_os_type", "Windows")
 	query.Set("device_info", "Chrome")
-	query.Set("device_id", XhhConfig[cfg.CONFIG_XHH_DEVICEID].Value)
+	query.Set("device_id", DefaultDeviceID.Value)
 	query.Set("hkey", hkey)
 	query.Set("_time", strconv.Itoa(time))
 	query.Set("nonce", nonce)

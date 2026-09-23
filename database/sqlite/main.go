@@ -14,7 +14,6 @@ var sqlite database.DataBase
 
 func Init() {
 	log.DebugLog("数据库为：SQLite")
-
 	sqlite.Conn = connect
 
 	var sqlite_config database.Config
@@ -22,6 +21,10 @@ func Init() {
 	sqlite_config.Get = config_get
 	sqlite.Config = sqlite_config
 
+	var sqlite_xhh database.Xhh
+	sqlite_xhh.GetCookie = xhh_getcookie
+	sqlite_xhh.SaveCookie = xhh_savecookie
+	sqlite.Xhh = sqlite_xhh
 	sqlite.Remove = remove
 	database.Db = &sqlite
 }

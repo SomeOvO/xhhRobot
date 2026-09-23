@@ -25,7 +25,12 @@ func Init() {
 		Loger.Printf("日志初始化完毕")
 	}
 }
-
+func ErrorLOG(arg ...any) {
+	Loger.Panicln("ERROR", arg)
+}
+func InfoLOG(arg ...any) {
+	Loger.Println("INFO", arg)
+}
 func DebugerInit() {
 	var w writer
 	Loger = log.New(w, "[log|debug]", log.Ldate|log.Ltime|log.Lshortfile|log.Lmsgprefix)
